@@ -70,7 +70,8 @@
 
 ; === interp-prim ===
 ; Interprets a primitive
-(defn interp-prim [op args])
+(defn interp-prim [op args]
+5)
 
 ; === interp ===
 ; Interprets the given AST in the given environment
@@ -88,12 +89,12 @@
                         other (raise (Exception "Conditionals must be boolean"))))
         (LamC) (CloV ast.args ast.body env)
         (AppC) (do
-                    (setv id-val (interp id env))
-                    (setv arg-vals (list (map (fn [arg] (interp arg env)) args)))
+                    (setv id-val (interp ast.id env))
+                    (setv arg-vals (list (map (fn [arg] (interp arg env)) ast.args)))
                     (match id-val
                         (CloV) (if (= (len arg-vals) (len id-val.args))
                                     (interp
-                                        body
+                                        id-val.body
                                         (+ (list 
                                                 (map (fn [arg val] (Binding arg val))
                                                     id-val.args
