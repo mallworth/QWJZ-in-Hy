@@ -88,10 +88,10 @@
 (defn interp-prim [operation args]
 
    (cond 
-   (= operation '+) (+ (. (get args 0) n) (. (get args 1) n))
-   (= operation '-) (- (. (get args 0) n) (. (get args 1) n))
-   (= operation '*) (* (. (get args 0) n) (. (get args 1) n))
-   (= operation '/) (/ (. (get args 0) n) (. (get args 1) n))
+   (= operation '+) (NumV (+ (. (get args 0) n) (. (get args 1) n)))
+   (= operation '-) (NumV (- (. (get args 0) n) (. (get args 1) n)))
+   (= operation '*) (NumV (* (. (get args 0) n) (. (get args 1) n)))
+   (= operation '/) (NumV (/ (. (get args 0) n) (. (get args 1) n)))
     True (raise ( Exception "Unhandled operation")))
 )
   
@@ -149,7 +149,27 @@
     (defn test_interp_1 [self]
         (self.assertEqual
             (interp (NumC 2) tl-env)
-            (NumV 2))))
+            (NumV 2)))
+    (defn test_interp_mult [self]
+        (self.assertEqual
+            (interp (AppC (IdC '*) [(NumC 12) (NumC 12)]) tl-env)
+            (NumV 144)))
+    (defn test_interp_add [self]
+        (self.assertEqual
+            (interp (AppC (IdC '+) [(NumC 12) (NumC 12)]) tl-env)
+            (NumV 24)))
+    (defn test_interp_minus [self]
+        (self.assertEqual
+            (interp (AppC (IdC '-) [(NumC 12) (NumC 13)]) tl-env)
+            (NumV -1)))
+    (defn test_interp_divine [self]
+        (self.assertEqual
+            (interp (AppC (IdC '/) [(NumC 12) (NumC 6)]) tl-env)
+            (NumV 2)))
+            
+)
+    
+            
 
 (if (= __name__ "__main__")
     (unittest.main)
