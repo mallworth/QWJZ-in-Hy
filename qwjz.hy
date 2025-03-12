@@ -1,3 +1,5 @@
+(import unittest)
+
 ; Define abstract syntax & values
 (defclass ExprC [])
 (defclass Value [])
@@ -25,21 +27,34 @@
         (setv self.f f)))
 (defclass NumV [Value]
     (defn __init__ [self n]
-        (setv self.n n)))
+        (setv self.n n))
+    (defn __eq__ [self other]
+        (= self.n other.n)))
 (defclass StrV [Value]
     (defn __init__ [self s]
-        (setv self.s s)))    
+        (setv self.s s))
+    (defn __eq__ [self other]
+        (= self.s other.s)))    
 (defclass BoolV [Value]
     (defn __init__ [self b]
-        (setv self.b b)))
+        (setv self.b b))
+    (defn __eq__ [self other]
+        (= self.b other.b)))
 (defclass PrimV [Value]
     (defn __init__ [self op]
-        (setv self.op op)))
+        (setv self.op op))
+    (defn __eq__ [self other]
+        (= self.op other.op)))
 (defclass CloV [ExprC]
     (defn __init__ [self args body env]
         (setv self.args args)
         (setv self.body body)
-        (setv self.env env)))
+        (setv self.env env))
+    (defn __eq__ [self other]
+        (and
+            (= self.args other.args)
+            (= self.body other.body)
+            (= self.env other.env))))
 (defclass Binding []
     (defn __init__ [self id val]
         (setv self.id id)
@@ -113,7 +128,6 @@
                         other (raise (Exception "Runtime Error"))))
         other (raise (Exception "Runtime Error"))))
 
-;;(assert ( = (interp apc tl-env) 6))
 ; === serialize ===
 ; Serializes a value as a string
 (defn serialize [v]
@@ -126,3 +140,17 @@
         (PrimV) "#<primop>"
         (CloV) "#<procedure>"
         other (raise (Exception "Not a value"))))
+
+; === tests ===
+(defclass TestQWJZ [unittest.TestCase]
+    (defn setUp [self]
+        False)
+
+    (defn test_interp_1 [self]
+        (self.assertEqual
+            (interp (NumC 2) tl-env)
+            (NumV 2))))
+
+(if (= __name__ "__main__")
+    (unittest.main)
+    False)
