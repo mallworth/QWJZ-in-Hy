@@ -101,9 +101,11 @@
                                                     arg-vals))
                                             id-val.env))
                                     (raise (Exception "Incorrect argument count")))
-                        (PrimV) (interp-prim ast.op arg-vals)
+                        (PrimV) (interp-prim id-val.op arg-vals)
                         other (raise (Exception "Runtime Error"))))
         other (raise (Exception "Runtime Error"))))
+
+(print (setv apc (AppC (IdC '*) [(NumC 2) (NumC 2)])))
 
 ; === serialize ===
 ; Serializes a value as a string
