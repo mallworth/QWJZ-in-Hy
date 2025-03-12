@@ -67,3 +67,21 @@
                 (if (= id fbind.id)
                     fbind.val
                     (lookup id (cut env 1 None))))))
+
+; === interp ===
+; Interprets the given AST in the given environment
+(defn interp [ast env]
+    (match ast
+        (NumC) (NumV ast.n)
+        (StrC) (StrV ast.s)
+        (IdC) (lookup ast.id env)
+        (CondC) (do
+                    (setv interp-cond (interp ast.cond env))
+                    (match interp-cond
+                        (BoolV) (if (= interp-cond.b True)
+                                    (interp ast.t env)
+                                    (interp ast.f env))
+                        other (raise (Exception "Conditionals must be boolean"))))
+        (LamC) (CloV ast.args ast.body env)
+        ;(AppC) ...
+        other (raise (Exception "Runtime Error"))))
