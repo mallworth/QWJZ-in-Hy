@@ -68,6 +68,10 @@
                     fbind.val
                     (lookup id (cut env 1 None))))))
 
+; === interp-prim ===
+; Interprets a primitive
+(defn interp-prim [op args])
+
 ; === interp ===
 ; Interprets the given AST in the given environment
 (defn interp [ast env]
@@ -83,5 +87,32 @@
                                     (interp ast.f env))
                         other (raise (Exception "Conditionals must be boolean"))))
         (LamC) (CloV ast.args ast.body env)
-        ;(AppC) ...
+        (AppC) (do
+                    (setv id-val (interp id env))
+                    (setv arg-vals (list (map (fn [arg] (interp arg env)) args)))
+                    (match id-val
+                        (CloV) (if (= (len arg-vals) (len id-val.args))
+                                    (interp
+                                        body
+                                        (+ (list 
+                                                (map (fn [arg val] (Binding arg val))
+                                                    id-val.args
+                                                    arg-vals))
+                                            id-val.env))
+                                    (raise (Exception "Incorrect argument count")))
+                        (PrimV) (interp-prim ast.op arg-vals)
+                        other (raise (Exception "Runtime Error"))))
         other (raise (Exception "Runtime Error"))))
+
+; === serialize ===
+; Serializes a value as a string
+(defn serialize [v]
+    (match v
+        (NumV) v.n
+        (StrV) v.s
+        (BoolV) (if v.b
+                    "true"
+                    "false")
+        (PrimV) "#<primop>"
+        (CloV) "#<procedure>"
+        other (raise (Exception "Not a value"))))
