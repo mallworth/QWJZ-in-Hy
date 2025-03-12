@@ -70,8 +70,16 @@
 
 ; === interp-prim ===
 ; Interprets a primitive
-(defn interp-prim [op args]
-5)
+(defn interp-prim [operation args]
+
+   (cond 
+   (= operation '+) (+ (. (get args 0) n) (. (get args 1) n))
+   (= operation '-) (- (. (get args 0) n) (. (get args 1) n))
+   (= operation '*) (* (. (get args 0) n) (. (get args 1) n))
+   (= operation '/) (/ (. (get args 0) n) (. (get args 1) n))
+    True (raise ( Exception "Unhandled operation")))
+)
+  
 
 ; === interp ===
 ; Interprets the given AST in the given environment
@@ -101,10 +109,11 @@
                                                     arg-vals))
                                             id-val.env))
                                     (raise (Exception "Incorrect argument count")))
-                        (PrimV) (interp-prim ast.op arg-vals)
+                        (PrimV) (interp-prim id-val.op arg-vals)
                         other (raise (Exception "Runtime Error"))))
         other (raise (Exception "Runtime Error"))))
 
+;;(assert ( = (interp apc tl-env) 6))
 ; === serialize ===
 ; Serializes a value as a string
 (defn serialize [v]
