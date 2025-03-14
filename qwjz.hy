@@ -1,30 +1,51 @@
 (import unittest)
 
+
+(defclass Reserved []
+    (setv if 'if)
+    (setv proc 'proc)
+    (setv declare 'declare)
+    (setv in 'in))
+
 ; Define abstract syntax & values
 (defclass ExprC [])
 (defclass Value [])
 (defclass NumC [ExprC]
     (defn __init__ [self n]
-        (setv self.n n)))
+        (setv self.n n))
+    (defn __eq__ [self other]
+        (= self.n other.n)))
 (defclass StrC [ExprC]
     (defn __init__ [self s]
-        (setv self.s s)))    
+        (setv self.s s))
+    (defn __eq__ [self other]
+        (= self.s other.s)))    
 (defclass IdC [ExprC]
     (defn __init__ [self id]
-        (setv self.id id)))
+        (setv self.id id))
+    (defn __eq__ [self other]
+        (= self.id other.id)))
 (defclass AppC [ExprC]
     (defn __init__ [self id args]
         (setv self.id id)
-        (setv self.args args)))
+        (setv self.args args))
+    (defn __eq__ [self other]
+        (& (= self.id other.id)
+           (= self.args other.args))))
 (defclass LamC [ExprC]
     (defn __init__ [self args body]
         (setv self.args args)
-        (setv self.body body)))
+        (setv self.body body))
+    (defn __eq__ [self other]
+        (& (= self.args other.args)
+           (= self.body other.body))))
 (defclass CondC [ExprC]
     (defn __init__ [self cond t f]
         (setv self.cond cond)
         (setv self.t t)
-        (setv self.f f)))
+        (setv self.f f))
+    (defn __eq__ [self other]
+        (= self.b other.b)))
 (defclass NumV [Value]
     (defn __init__ [self n]
         (setv self.n n))
@@ -72,30 +93,11 @@
     (Binding 'equal? (PrimV 'equal?))
     (Binding 'error (PrimV 'error))])
 
-; === lookup ===
-; Gets the value of an IdC in a given environment
-(defn lookup [id env]
-    (match env
-        [] (raise (Exception f"Unbound indentifier: {id}"))
-        other (do
-                (setv fbind (get env 0))
-                (if (= id fbind.id)
-                    fbind.val
-                    (lookup id (cut env 1 None))))))
+; === top-interp ===
+; parse and interpret the given Sexp
+(defn top-interp [exp]
+    (serialize (interp (parse exp) tl-env)))
 
-; === interp-prim ===
-; Interprets a primitive
-(defn interp-prim [operation args]
-   (cond 
-   (= operation '+) (NumV (+ (. (get args 0) n) (. (get args 1) n)))
-   (= operation '-) (NumV (- (. (get args 0) n) (. (get args 1) n)))
-   (= operation '*) (NumV (* (. (get args 0) n) (. (get args 1) n)))
-   (= operation '/) (NumV (/ (. (get args 0) n) (. (get args 1) n)))
-   (= operation '<=) (BoolV (<= (. (get args 0) n) (. (get args 1) n)))
-   (= operation 'equal?) (BoolV (= (. (get args 0) n) (. (get args 1) n)))
-   (= operation 'error) (raise (Exception (get args 0)))
-    True (raise ( Exception "Unhandled operation"))))
-  
 ; === interp ===
 ; Interprets the given AST in the given environment
 (defn interp [ast env]
@@ -128,11 +130,35 @@
                         other (raise (Exception "Runtime Error"))))
         other (raise (Exception "Runtime Error"))))
 
+; === lookup ===
+; Gets the value of an IdC in a given environment
+(defn lookup [id env]
+    (match env
+        [] (raise (Exception f"Unbound indentifier: {id}"))
+        other (do
+                (setv fbind (get env 0))
+                (if (= id fbind.id)
+                    fbind.val
+                    (lookup id (cut env 1 None))))))
+
+; === interp-prim ===
+; Interprets a primitive
+(defn interp-prim [operation args]
+   (cond 
+   (= operation '+) (NumV (+ (. (get args 0) n) (. (get args 1) n)))
+   (= operation '-) (NumV (- (. (get args 0) n) (. (get args 1) n)))
+   (= operation '*) (NumV (* (. (get args 0) n) (. (get args 1) n)))
+   (= operation '/) (NumV (/ (. (get args 0) n) (. (get args 1) n)))
+   (= operation '<=) (BoolV (<= (. (get args 0) n) (. (get args 1) n)))
+   (= operation 'equal?) (BoolV (= (. (get args 0) n) (. (get args 1) n)))
+   (= operation 'error) (raise (Exception (get args 0)))
+    True (raise ( Exception "Unhandled operation"))))
+  
 ; === serialize ===
 ; Serializes a value as a string
 (defn serialize [v]
     (match v
-        (NumV) v.n
+        (NumV) (str v.n)
         (StrV) v.s
         (BoolV) (if v.b
                     "true"
@@ -140,6 +166,40 @@
         (PrimV) "#<primop>"
         (CloV) "#<procedure>"
         other (raise (Exception "Not a value"))))
+
+; === parse ===
+; parse QWJZ from an S-expression to ExprC
+(defn parse [sexp]
+    (match sexp
+        (| (float x)
+           (int x))
+            (NumC x)
+        (hy.models.Symbol s)
+            (match s
+                (| "if" "proc" "declare" "in")
+                    (raise (Exception "QWJZ invalid identifier"))
+                id (IdC id))
+        (hy.models.String str)
+            (StrC str)
+        [Reserved.if c t f]
+            (CondC (parse c) (parse t) (parse f))
+        [Reserved.proc [#* a] b]
+            (if (args-valid? a)
+                (LamC a (parse b))
+                (raise (Exception "QWJZ invalid argument names in lambda")))
+        ;[Reserved.declare [[a d] [c e]] :as o Reserved.in s]
+        ;    (print "test" )
+        [op #* args]
+            (AppC (parse op) (list (map parse args)))))
+
+; === args-valid? ===
+; confirm that a list of symbols contains only unique, non-reserved identifiers
+(defn args-valid? [args]
+    (and (= (len args) (len (set args)))
+        (not (in Reserved.if args))
+        (not (in Reserved.proc args))
+        (not (in Reserved.declare args))
+        (not (in Reserved.in args))))
 
 ; === tests ===
 (defclass TestQWJZ [unittest.TestCase]
@@ -176,8 +236,13 @@
             (BoolV True)))
     (defn test_interp_error_message [self]
         (with [(self.assertRaisesRegex Exception "Unbound indentifier: fail")]
-            (interp (AppC (IdC 'fail) [(StrC "placeholder")]) tl-env))) 
-)
+            (interp (AppC (IdC 'fail) [(StrC "placeholder")]) tl-env)))
+    (defn test_top-interp [self]
+        (self.assertEqual
+            (top-interp '[[proc [a b c] [a [+ b c]]]
+                          [proc [x] [+ [* 2 x] [* x x]]]
+                          7 5])
+            "168")))
     
             
 
