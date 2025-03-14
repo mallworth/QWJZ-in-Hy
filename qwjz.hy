@@ -86,19 +86,16 @@
 ; === interp-prim ===
 ; Interprets a primitive
 (defn interp-prim [operation args]
-
    (cond 
    (= operation '+) (NumV (+ (. (get args 0) n) (. (get args 1) n)))
    (= operation '-) (NumV (- (. (get args 0) n) (. (get args 1) n)))
    (= operation '*) (NumV (* (. (get args 0) n) (. (get args 1) n)))
    (= operation '/) (NumV (/ (. (get args 0) n) (. (get args 1) n)))
    (= operation '<=) (BoolV (<= (. (get args 0) n) (. (get args 1) n)))
-   (= operation 'equal?) (BoolV (= (. (get args 0) n) (. (get args 1) n)))
-   (= operation 'error) (raise args)
-    True (raise ( Exception "Unhandled operation")))
-)
+   (= operation 'equal?) (BoolV (== (. (get args 0) n) (. (get args 1) n)))
+   (= operation 'error) (raise (Exception (get args 0)))
+    True (raise ( Exception "Unhandled operation"))))
   
-
 ; === interp ===
 ; Interprets the given AST in the given environment
 (defn interp [ast env]
