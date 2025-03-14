@@ -111,7 +111,7 @@
                         (BoolV) (if (= interp-cond.b True)
                                     (interp ast.t env)
                                     (interp ast.f env))
-                        other (raise (Exception "Conditionals must be boolean"))))
+                        other (raise (Exception "QWJZ Conditionals must be boolean"))))
         (LamC) (CloV ast.args ast.body env)
         (AppC) (do
                     (setv id-val (interp ast.id env))
@@ -125,16 +125,16 @@
                                                     id-val.args
                                                     arg-vals))
                                             id-val.env))
-                                    (raise (Exception "Incorrect argument count")))
+                                    (raise (Exception "QWJZ incorrect argument count")))
                         (PrimV) (interp-prim id-val.op arg-vals)
-                        other (raise (Exception "Runtime Error"))))
+                        other (raise (Exception "QWJZ invalid application"))))
         other (raise (Exception "Runtime Error"))))
 
 ; === lookup ===
 ; Gets the value of an IdC in a given environment
 (defn lookup [id env]
     (match env
-        [] (raise (Exception f"Unbound indentifier: {id}"))
+        [] (raise (Exception f"QWJZ Unbound indentifier: {id}"))
         other (do
                 (setv fbind (get env 0))
                 (if (= id fbind.id)
@@ -242,8 +242,22 @@
             (top-interp '[[proc [a b c] [a [+ b c]]]
                           [proc [x] [+ [* 2 x] [* x x]]]
                           7 5])
-            "168")))
-    
+            "168"))
+    (defn test_interp_arg_name [self]
+        (with [(self.assertRaisesRegex Exception "QWJZ invalid argument names in lambda")]
+            (top-interp '[proc [x y if] [+ x y]])))
+    (defn test_interp_ [self]
+        (with [(self.assertRaisesRegex Exception "QWJZ invalid argument names in lambda")]
+            (top-interp '[proc [x y if] [+ x y]])))
+    (defn test_interp_argc [self]
+        (with [(self.assertRaisesRegex Exception "QWJZ incorrect argument count")]
+            (top-interp '[[proc [x y z] [+ x y]] 1 2])))
+    (defn test_interp_cond [self]
+        (with [(self.assertRaisesRegex Exception "QWJZ Conditionals must be boolean")]
+            (top-interp '[if 10 0 1])))
+    (defn test_interp_app [self]
+        (with [(self.assertRaisesRegex Exception "QWJZ invalid application")]
+            (top-interp '[[if [equal? 1 1 ] 0 1 ] 1 2 3 ]))))
             
 
 (if (= __name__ "__main__")
