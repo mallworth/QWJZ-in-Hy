@@ -92,6 +92,9 @@
    (= operation '-) (NumV (- (. (get args 0) n) (. (get args 1) n)))
    (= operation '*) (NumV (* (. (get args 0) n) (. (get args 1) n)))
    (= operation '/) (NumV (/ (. (get args 0) n) (. (get args 1) n)))
+   (= operation '<=) (BoolV (<= (. (get args 0) n) (. (get args 1) n)))
+   (= operation 'equal?) (BoolV (= (. (get args 0) n) (. (get args 1) n)))
+   (= operation 'error) (raise args)
     True (raise ( Exception "Unhandled operation")))
 )
   
