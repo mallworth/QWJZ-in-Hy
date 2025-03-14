@@ -92,7 +92,7 @@
    (= operation '*) (NumV (* (. (get args 0) n) (. (get args 1) n)))
    (= operation '/) (NumV (/ (. (get args 0) n) (. (get args 1) n)))
    (= operation '<=) (BoolV (<= (. (get args 0) n) (. (get args 1) n)))
-   (= operation 'equal?) (BoolV (== (. (get args 0) n) (. (get args 1) n)))
+   (= operation 'equal?) (BoolV (= (. (get args 0) n) (. (get args 1) n)))
    (= operation 'error) (raise (Exception (get args 0)))
     True (raise ( Exception "Unhandled operation"))))
   
@@ -162,11 +162,21 @@
         (self.assertEqual
             (interp (AppC (IdC '-) [(NumC 12) (NumC 13)]) tl-env)
             (NumV -1)))
-    (defn test_interp_divine [self]
+    (defn test_interp_divide [self]
         (self.assertEqual
             (interp (AppC (IdC '/) [(NumC 12) (NumC 6)]) tl-env)
             (NumV 2)))
-            
+    (defn test_interp_conditional [self]
+        (self.assertEqual
+            (interp (CondC (AppC (IdC '<=) [(NumC 5) (NumC 3)]) (NumC 1) (NumC 0)) tl-env)
+            (NumV 0)))    
+    (defn test_interp_equals [self]
+        (self.assertEqual
+            (interp (AppC (IdC 'equal?) [(NumC 3) (NumC 3)]) tl-env)
+            (BoolV True)))
+    (defn test_interp_error_message [self]
+        (with [(self.assertRaisesRegex Exception "Unbound indentifier: fail")]
+            (interp (AppC (IdC 'fail) [(StrC "placeholder")]) tl-env))) 
 )
     
             
